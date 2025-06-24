@@ -1,1 +1,1 @@
-Fcitx5 (Clipboard Filter Plugin)
+Fcitx5 (SMS OTP Plugin)
