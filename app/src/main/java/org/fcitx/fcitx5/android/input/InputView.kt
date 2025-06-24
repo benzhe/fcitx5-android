@@ -95,7 +95,7 @@ class InputView(
 
     private val scope = DynamicScope()
     private val themedContext = context.withTheme(R.style.Theme_InputViewTheme)
-    private val broadcaster = InputBroadcaster()
+    internal val broadcaster = InputBroadcaster()
     private val popup = PopupComponent()
     private val punctuation = PunctuationComponent()
     private val returnKeyDrawable = ReturnKeyDrawableComponent()

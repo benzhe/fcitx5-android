@@ -82,6 +82,8 @@ import kotlin.math.min
 class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(),
     InputBroadcastReceiver {
 
+    private var otpCode: String? = null
+
     private val context by manager.context()
     private val theme by manager.theme()
     private val service by manager.inputMethodService()
@@ -165,6 +167,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
 
     private fun evalIdleUiState(fromUser: Boolean = false) {
         val newState = when {
+            otpCode != null -> IdleUi.State.Otp
             isClipboardFresh -> IdleUi.State.Clipboard
             isInlineSuggestionPresent -> IdleUi.State.InlineSuggestion
             isCapabilityFlagsPassword && !isKeyboardLayoutNumber -> IdleUi.State.NumberRow
@@ -261,6 +264,11 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
                     }
                     true
                 }
+            }
+            otpUi.suggestionView.setOnClickListener {
+                otpCode?.let(service::commitText)
+                otpCode = null
+                evalIdleUiState()
             }
         }
     }
@@ -388,6 +396,12 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
 
     override fun onCandidateUpdate(data: CandidateListEvent.Data) {
         barStateMachine.push(CandidatesUpdated, CandidateEmpty to data.candidates.isEmpty())
+    }
+
+    override fun onOtpReceived(otp: String) {
+        idleUi.otpUi.text.text = otp
+        otpCode = otp
+        evalIdleUiState()
     }
 
     override fun onWindowAttached(window: InputWindow) {

@@ -93,8 +93,8 @@ class FcitxRemoteService : Service() {
             Timber.d("unregisterClipboardEntryTransformer: ${transformer.desc}")
             scope.launch {
                 clipboardTransformers.remove(transformer)
-                        || clipboardTransformers.removeAll { it.descEquals(transformer) }
-                        || return@launch
+                    || clipboardTransformers.removeAll { it.descEquals(transformer) }
+                    || return@launch
                 updateClipboardManager()
             }
         }
@@ -105,6 +105,16 @@ class FcitxRemoteService : Service() {
 
         override fun reloadQuickPhrase() {
             FcitxDaemon.getFirstConnectionOrNull()?.runIfReady { reloadQuickPhrase() }
+        }
+
+        override fun updateOtp(otp: String?) {
+            Timber.d("updateOtp called: $otp")
+            otp?.let {
+                val intent = Intent(BuildConfig.APPLICATION_ID + ".OTP_RECEIVED").apply {
+                    putExtra(BuildConfig.APPLICATION_ID + ".OTP_CODE", it)
+                }
+                sendBroadcast(intent)
+            }
         }
     }
 

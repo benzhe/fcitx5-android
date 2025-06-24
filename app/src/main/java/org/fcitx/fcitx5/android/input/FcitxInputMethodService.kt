@@ -63,7 +63,13 @@ import org.fcitx.fcitx5.android.data.prefs.ManagedPreferenceProvider
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.cursor.CursorRange
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import org.fcitx.fcitx5.android.BuildConfig
 import org.fcitx.fcitx5.android.input.cursor.CursorTracker
+import org.fcitx.fcitx5.android.utils.Const
 import org.fcitx.fcitx5.android.utils.InputMethodUtil
 import org.fcitx.fcitx5.android.utils.alpha
 import org.fcitx.fcitx5.android.utils.forceShowSelf
@@ -177,6 +183,13 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
      * subsequent operations can start if the prior operation is not finished (suspended),
      * [postFcitxJob] ensures that operations are executed sequentially.
      */
+    private val otpReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val otp = intent.getStringExtra(BuildConfig.APPLICATION_ID + ".OTP_CODE") ?: return
+            inputView?.broadcaster?.onOtpReceived(otp)
+        }
+    }
+
     fun postFcitxJob(block: suspend FcitxAPI.() -> Unit): Job {
         val job = fcitx.lifecycleScope.launch(start = CoroutineStart.LAZY) {
             fcitx.runOnReady(block)
@@ -186,6 +199,11 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onCreate() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(otpReceiver, IntentFilter(BuildConfig.APPLICATION_ID + ".OTP_RECEIVED"), RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(otpReceiver, IntentFilter(BuildConfig.APPLICATION_ID + ".OTP_RECEIVED"))
+        }
         fcitx = FcitxDaemon.connect(javaClass.name)
         lifecycleScope.launch {
             jobs.consumeEach { it.join() }
@@ -979,6 +997,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onDestroy() {
+        unregisterReceiver(otpReceiver)
         recreateInputViewPrefs.forEach {
             it.unregisterOnChangeListener(recreateInputViewListener)
         }

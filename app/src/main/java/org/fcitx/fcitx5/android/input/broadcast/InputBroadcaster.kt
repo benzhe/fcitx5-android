@@ -90,4 +90,8 @@ class InputBroadcaster : UniqueComponent<InputBroadcaster>(), Dependent, InputBr
         receivers.forEach { it.onReturnKeyDrawableUpdate(resourceId) }
     }
 
+    override fun onOtpReceived(otp: String) {
+        receivers.forEach { it.onOtpReceived(otp) }
+    }
+
 }
